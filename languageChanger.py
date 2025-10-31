@@ -133,7 +133,7 @@ def get_translation():
        return -1
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
-        api_key="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", #feel free to use this key, it has a dollar limit on it doesn't matter if you use it
+        api_key="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", #feel free to use this key, it has a dollar limit on it doesn't matter if you use it
     )
     completion = client.chat.completions.create(
         model="deepseek/deepseek-chat-v3.1:free",
