@@ -1,21 +1,16 @@
-import cv2
 import moviepy as mp
-import numpy as np
 import os
 import speech_recognition as sr
-import re
 from openai import OpenAI
 from flask import Flask, request, redirect, url_for, render_template_string, send_file
 from gtts import gTTS
-from pydub import AudioSegment
-from pydub # need to install ffmpeg for pydub to work properly,run winget install ffmpeg.playback import play
-import gtts.lang
-
+from pydub import AudioSegment # need to install ffmpeg for pydub to work properly, run winget install ffmpeg.playback import play
+import glob
 app = Flask(__name__)
 transcript = ""
 translated_transcript = ""
 aiComment = ""
-language = "Spanish"  # Desired language for translation
+language = ""  # Desired language for translation
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv', 'webm'}
 
@@ -90,7 +85,6 @@ reverse_language_map = {v.lower(): k for k, v in language_map.items()}
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-# print("This program will rate a video using AI to rate a transcript of the video. \nThen will rate the visuals on how blurry it is and the audio on how clear it is")
 
 def extract_audio(video_path, audio_path="temp_audio.wav"):
     global transcript
@@ -124,7 +118,7 @@ def extract_audio(video_path, audio_path="temp_audio.wav"):
         video.close()
         return audio_path
 
-# cheap function that translates all at once, but worse
+# cheap function that translates all at once, but worse unused in this version
 def get_translation():
     if(not transcript):
        return -1
@@ -163,7 +157,8 @@ def get_translation(segment):
        return -1
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
-        api_key="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", #feel free to use this key, it has a dollar limit on it doesn't matter if you use it
+        # temporary api key, feel free to use if it doesn't work get your own from openrouter.ai
+        api_key="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", #feel free to use this key, it has a dollar limit on it doesn't matter if you use it
     )
     completion = client.chat.completions.create(
         model="deepseek/deepseek-chat-v3.1:free",
@@ -221,6 +216,11 @@ def upload_video():
         if file.filename == '':
             return "No selected file"
         if file and allowed_file(file.filename):
+            for f in glob.glob(os.path.join(UPLOAD_FOLDER, "*")):
+                try:
+                    os.remove(f)
+                except Exception as e:
+                    print(f"Error deleting file {f}: {e}")
             video_path = os.path.join(UPLOAD_FOLDER, file.filename)
             file.save(video_path)
             # Read selected target language from the form and call translate
@@ -251,7 +251,7 @@ def upload_video():
             </head>
             <body>
             <h1>AI Video Translator</h1>
-            <p>The default language to translate to is Spanish. The AI is not perfect and may not always provide accurate translations.</p>
+            <p>The default language to translate to is English. The AI is not perfect and may not always provide accurate translations.</p>
             <form method=post enctype=multipart/form-data onsubmit="document.getElementById('progress').style.display='block';">
                             <label for="language">Choose target language:</label>
                             <select name="language" id="language">
@@ -356,7 +356,7 @@ def upload_video():
     </head>
     <body>
     <h1>AI Video Translator</h1>
-    <p>The default language to translate to is Spanish. The AI is not perfect and may not always provide accurate translations.</p>
+    <p>The default language to translate to is English. The AI is not perfect and may not always provide accurate translations.</p>
         <form method=post enctype=multipart/form-data onsubmit="showProgress()">
             <label for="language">Choose target language:</label>
             <select name="language" id="language">
