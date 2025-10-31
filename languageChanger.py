@@ -8,14 +8,13 @@ from openai import OpenAI
 from flask import Flask, request, redirect, url_for, render_template_string, send_file
 from gtts import gTTS
 from pydub import AudioSegment
-from pydub.playback import play
+from pydub # need to install ffmpeg for pydub to work properly,run winget install ffmpeg.playback import play
 import gtts.lang
 
 app = Flask(__name__)
 transcript = ""
 translated_transcript = ""
 aiComment = ""
-transcribedCount = 0
 language = "Spanish"  # Desired language for translation
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv', 'webm'}
@@ -96,7 +95,6 @@ if not os.path.exists(UPLOAD_FOLDER):
 def extract_audio(video_path, audio_path="temp_audio.wav"):
     global transcript
     global translated_transcript
-    global transcribedCount
     video = mp.VideoFileClip(video_path)
     video.audio.write_audiofile(audio_path)
 
@@ -107,7 +105,6 @@ def extract_audio(video_path, audio_path="temp_audio.wav"):
         # print(f"Audio duration: {totalDuration:.2f} sec")
         for i in range(0, totalDuration, chunkDuration):
             # print(f"Transcribing chunk {i}–{i+chunkDuration} seconds...")
-            transcribedCount += 1
             try:
                 audio = r.record(source,duration=chunkDuration)
                 text = r.recognize_google(audio)
@@ -133,7 +130,7 @@ def get_translation():
        return -1
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
-        api_key="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", #feel free to use this key, it has a dollar limit on it doesn't matter if you use it
+        api_key="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", #feel free to use this key, it has a dollar limit on it doesn't matter if you use it
     )
     completion = client.chat.completions.create(
         model="deepseek/deepseek-chat-v3.1:free",
@@ -229,6 +226,10 @@ def upload_video():
             # Read selected target language from the form and call translate
             selected_language = request.form.get('language')
             global aiComment
+            global transcript
+            global translated_transcript
+            transcript = ""
+            translated_transcript = ""
             aiComment = ""
             result = translate_video(video_path, selected_language)
             return '''
