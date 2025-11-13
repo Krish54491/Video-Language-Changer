@@ -89,6 +89,10 @@ if not os.path.exists(UPLOAD_FOLDER):
 def extract_audio(video_path, target_language, audio_path="temp_audio.wav"):
     global transcript
     global translated_transcript
+    global aiComment
+    translated_transcript = ""
+    transcript = ""
+    aiComment = ""
     video = mp.VideoFileClip(video_path)
     video.audio.write_audiofile(audio_path)
 
@@ -116,7 +120,7 @@ def extract_audio(video_path, target_language, audio_path="temp_audio.wav"):
                 print("Could not request results from Google Speech Recognition service; {0}".format(e))
         video.audio.close()
         video.close()
-        return audio_path
+        return transcript, translated_transcript
 
 # cheap function that translates all at once, but worse unused in this version
 def get_translation():
@@ -475,6 +479,7 @@ def generate_audio_from_transcript(output_file="output_audio.mp3"):
 @app.route('/generate-audio', methods=['GET'])
 def generate_audio():
     """Endpoint to generate and download the audio file."""
+    global translated_transcript
     if not translated_transcript.strip():
         return "Transcript is empty. Cannot generate audio.", 400
 
