@@ -2,7 +2,7 @@ import moviepy as mp
 import os
 import speech_recognition as sr
 from openai import OpenAI
-from flask import Flask, request, redirect, url_for, render_template_string, send_file
+from flask import Flask, request, jsonify, send_file
 from gtts import gTTS
 from pydub import AudioSegment # need to install ffmpeg for pydub to work properly, run winget install ffmpeg.playback import play
 import glob
@@ -13,7 +13,7 @@ aiComment = ""
 language = ""  # Desired language for translation
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv', 'webm'}
-
+openrouter_key=os.getenv("OPENROUTER_API_KEY")
 language_map = {
     'ca': 'Catalan',
     'cs': 'Czech', 
@@ -86,7 +86,7 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 
-def extract_audio(video_path, audio_path="temp_audio.wav"):
+def extract_audio(video_path, target_language, audio_path="temp_audio.wav"):
     global transcript
     global translated_transcript
     video = mp.VideoFileClip(video_path)
@@ -103,7 +103,7 @@ def extract_audio(video_path, audio_path="temp_audio.wav"):
                 audio = r.record(source,duration=chunkDuration)
                 text = r.recognize_google(audio)
                 transcript += text
-                segment = get_translation(text)
+                segment = get_translation(text, target_language)
                 translated_transcript += segment + " time stamp: " + str(i) + " to " + str(min(i+chunkDuration, totalDuration)) + "\n"
                 with open("transcription.txt", "w") as f:
                     f.write(transcript)
@@ -152,13 +152,13 @@ def get_translation():
     return aiComment
 
 # this is the more expensive function that translates in segments
-def get_translation(segment):
+def get_translation(segment, target_language):
     if(not transcript):
        return -1
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         # temporary api key, feel free to use if it doesn't work get your own from openrouter.ai
-        api_key="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", #feel free to use this key, it has a dollar limit on it doesn't matter if you use it
+        api_key=openrouter_key,
     )
     completion = client.chat.completions.create(
         model="deepseek/deepseek-chat-v3.1:free",
@@ -166,7 +166,7 @@ def get_translation(segment):
         [
           {
             "role": "user",
-            "content": ("Hello your job is to translate this transcript to " + language + "Don't add any extra comments or texts as this will be used for tts. Segment:" + segment)
+            "content": ("Hello your job is to translate this transcript to " + target_language + "Don't add any extra comments or texts as this will be used for tts. Segment:" + segment)
             }
         ]
     )
@@ -195,12 +195,13 @@ def download_translated_transcript():
         return send_file(transcript_path, as_attachment=True)
     else:
         return "Transcript not found.", 404
+    
 @app.route("/translate")
 def translate_video(video_path, target_language):
     global language
     if target_language:
         language = target_language
-    extract_audio(video_path)
+    extract_audio(video_path, target_language)
     result = f"<h2>Translation Result:</h2><p>{aiComment}</p>"
     return result
 
@@ -482,3 +483,51 @@ def generate_audio():
         return send_file(audio_file, as_attachment=True)
     else:
         return "Failed to generate audio file.", 500
+@app.route("/api/translate", methods=["POST"])
+def api_translate():
+    """
+    POST /api/translate
+    FormData:
+      video: file
+      language: target language (e.g. "French")
+    """
+    if "video" not in request.files:
+        return jsonify({"error": "No video file uploaded"}), 400
+
+    video = request.files["video"]
+    language = request.form.get("language", "English")
+
+    filename = os.path.join(UPLOAD_FOLDER, video.filename)
+    video.save(filename)
+
+    transcript, translated = extract_audio(filename, language)
+    return jsonify({"transcript": transcript, "translated": translated})
+
+
+@app.route("/api/audio", methods=["POST"])
+def api_audio():
+    """
+    POST /api/audio
+    JSON:
+      text: translated text
+      language: target language code
+    Returns: MP3 file
+    """
+    data = request.get_json()
+    text = data.get("text", "")
+    lang = data.get("language", "en")
+
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
+
+    audio_file = generate_audio_from_transcript(text, lang)
+    return send_file(audio_file, as_attachment=True)
+
+
+@app.route("/")
+def root():
+    return jsonify({"status": "API running"})
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080)

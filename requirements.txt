@@ -1,0 +1,7 @@
+Flask
+moviepy
+SpeechRecognition
+openai
+gTTS
+pydub
+ffmpeg-python
