@@ -491,6 +491,8 @@ def api_translate():
       video: file
       language: target language (e.g. "French")
     """
+    global transcript
+    global translated
     if "video" not in request.files:
         return jsonify({"error": "No video file uploaded"}), 400
 
@@ -500,7 +502,7 @@ def api_translate():
     filename = os.path.join(UPLOAD_FOLDER, video.filename)
     video.save(filename)
 
-    transcript, translated = extract_audio(filename, language)
+    extract_audio(filename, language)
     return jsonify({"transcript": transcript, "translated": translated})
 
 
