@@ -10,7 +10,7 @@ import glob
 app = Flask(__name__)
 CORS(app, origins=[
     "http://localhost:5173",
-    "krish544.com"
+    "http://krish544.com"
 ])
 transcript = ""
 translated_transcript = ""
@@ -534,7 +534,7 @@ def api_audio():
     return send_file(audio_file, as_attachment=True)
 
 
-@app.route("/")
+@app.route("/api/status")
 def root():
     return jsonify({"status": "API running"})
 
