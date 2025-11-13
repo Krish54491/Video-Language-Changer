@@ -3,10 +3,15 @@ import os
 import speech_recognition as sr
 from openai import OpenAI
 from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
 from gtts import gTTS
 from pydub import AudioSegment # need to install ffmpeg for pydub to work properly, run winget install ffmpeg.playback import play
 import glob
 app = Flask(__name__)
+CORS(app, origins=[
+    "http://localhost:5173",
+    "krish544.com"
+])
 transcript = ""
 translated_transcript = ""
 aiComment = ""
