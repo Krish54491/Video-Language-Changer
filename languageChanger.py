@@ -10,7 +10,7 @@ import glob
 app = Flask(__name__)
 CORS(app, origins=[
     "http://localhost:5173",
-    "http://krish544.com"
+    "https://krish544.com"
 ])
 transcript = ""
 translated_transcript = ""
