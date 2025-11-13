@@ -525,7 +525,7 @@ def api_audio():
     """
     data = request.get_json()
     text = data.get("text", "")
-    lang = data.get("language", "en")
+    lang = reverse_language_map.get(data.get("language", "en"))
 
     if not text:
         return jsonify({"error": "No text provided"}), 400
