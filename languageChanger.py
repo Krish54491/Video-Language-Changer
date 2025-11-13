@@ -480,7 +480,41 @@ def generate_audio_from_transcript(output_file="output_audio.mp3"):
     else:
         print("No audio segments generated.")
         return None
+def generate_audio_from_transcript(translated, language, output_file="output_audio.mp3"):
+    """
+    Generate an audio file from the translated transcript.
+    Each segment of the transcript is read by an AI voice and ends at the specified timestamp.
+    """
+    segments = translated.split("\n")
+    audio_segments = []
+    for segment in segments:
+        if "time stamp:" in segment:
+            try:
+                text, timestamp = segment.rsplit("time stamp:", 1)
+                start, end = map(int, timestamp.split("to"))
+                lang = reverse_language_map.get(language.lower(), "en")
+                # Generate TTS audio for the text
+                tts = gTTS(text=text.strip(), lang=lang)
+                tts.save("temp_segment.mp3")
 
+                # Load the audio and adjust duration to match the timestamp
+                audio = AudioSegment.from_file("temp_segment.mp3")
+                duration = (end - start) * 1000  # Convert seconds to milliseconds
+                audio = audio[:duration]  # Trim or pad audio to match duration
+
+                audio_segments.append(audio)
+            except Exception as e:
+                print(f"Error processing segment: {segment}. Error: {e}")
+
+    # Combine all audio segments
+    if audio_segments:
+        final_audio = sum(audio_segments)
+        final_audio.export(output_file, format="mp3")
+        print(f"Audio file generated: {output_file}")
+        return output_file
+    else:
+        print("No audio segments generated.")
+        return None
 @app.route('/generate-audio', methods=['GET'])
 def generate_audio():
     """Endpoint to generate and download the audio file."""
@@ -525,7 +559,7 @@ def api_audio():
     """
     data = request.get_json()
     text = data.get("text", "")
-    lang = reverse_language_map.get(data.get("language", "English"))
+    lang = data.get("language", "English")
 
     if not text:
         return jsonify({"error": "No text provided"}), 400
