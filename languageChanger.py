@@ -8,10 +8,10 @@ from gtts import gTTS
 from pydub import AudioSegment # need to install ffmpeg for pydub to work properly, run winget install ffmpeg.playback import play
 import glob
 app = Flask(__name__)
-CORS(app, origins=[
-    "http://localhost:5173",
-    "https://krish544.com"
-])
+CORS(app, resources={r"/*": {"origins": [
+    "https://krish544.com",
+    "http://localhost:5173"
+]}})
 transcript = ""
 translated_transcript = ""
 aiComment = ""
