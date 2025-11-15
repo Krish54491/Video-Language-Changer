@@ -11,7 +11,9 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": [
     "https://krish544.com",
     "http://localhost:5173"
-]}})
+]}},
+allow_headers=["Content-Type"],
+methods=["GET", "POST"])
 transcript = ""
 translated_transcript = ""
 aiComment = ""
@@ -205,7 +207,7 @@ def download_translated_transcript():
     else:
         return "Transcript not found.", 404
     
-@app.route("/translate")
+@app.route("/translate", methods=["POST"])
 def translate_video(video_path, target_language):
     global language
     if target_language:
