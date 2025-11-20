@@ -20,7 +20,7 @@ aiComment = ""
 language = ""  # Desired language for translation
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv', 'webm'}
-openrouter_key=os.getenv("OPENROUTER_API_KEY")
+openrouter_key="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"#os.getenv("OPENROUTER_API_KEY")
 language_map = {
     'ca': 'Catalan',
     'cs': 'Czech', 
@@ -106,7 +106,7 @@ def extract_audio(video_path, target_language, audio_path="temp_audio.wav"):
     r = sr.Recognizer()
     with sr.AudioFile("temp_audio.wav") as source:
         totalDuration = int(source.DURATION)
-        chunkDuration = 10 # change this to change how long it listens before transcribing (less is recommended) the shorter it is the longer the rating will take
+        chunkDuration = 30 # change this to change how long it listens before transcribing (less is recommended) the shorter it is the longer the rating will take
         # print(f"Audio duration: {totalDuration:.2f} sec")
         for i in range(0, totalDuration, chunkDuration):
             # print(f"Transcribing chunk {i}–{i+chunkDuration} seconds...")
@@ -172,14 +172,15 @@ def get_translation(segment, target_language):
         api_key=openrouter_key,
     )
     completion = client.chat.completions.create(
-        model="deepseek/deepseek-chat-v3.1:free",
+        model="openai/gpt-oss-20b:free",
         messages=
         [
           {
             "role": "user",
             "content": ("Hello your job is to translate this transcript to " + target_language + "Don't add any extra comments or texts as this will be used for tts. Segment:" + segment)
             }
-        ]
+        ],
+        extra_body={"reasoning": {"enabled": True}}
     )
 
     try:
@@ -452,6 +453,7 @@ def generate_audio_from_transcript(output_file="output_audio.mp3"):
     Each segment of the transcript is read by an AI voice and ends at the specified timestamp.
     """
     global language
+    global translated_transcript
     segments = translated_transcript.split("\n")
     audio_segments = []
     for segment in segments:
@@ -524,7 +526,7 @@ def generate_audio():
     if not translated_transcript.strip():
         return "Transcript is empty. Cannot generate audio.", 400
 
-    audio_file = generate_audio_from_transcript()
+    audio_file = generate_audio_from_transcript(translated=translated_transcript, language=language)
     if audio_file:
         return send_file(audio_file, as_attachment=True)
     else:
