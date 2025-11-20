@@ -20,7 +20,7 @@ aiComment = ""
 language = ""  # Desired language for translation
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv', 'webm'}
-openrouter_key="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"#os.getenv("OPENROUTER_API_KEY")
+openrouter_key= os.getenv("OPENROUTER_API_KEY")
 language_map = {
     'ca': 'Catalan',
     'cs': 'Czech', 
