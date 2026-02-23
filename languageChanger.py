@@ -7,10 +7,12 @@ from flask_cors import CORS
 from gtts import gTTS
 from pydub import AudioSegment # need to install ffmpeg for pydub to work properly, run winget install ffmpeg.playback import play
 import glob
+
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": [
     "https://krish544.com",
-    "http://localhost:5173"
+    "http://localhost:5173",
+    "http://localhost:8788",
 ]}},
 allow_headers=["Content-Type"],
 methods=["GET", "POST"])
@@ -86,7 +88,6 @@ language_map = {
     'zh-TW': 'Chinese (Mandarin/Taiwan)',
     'zh': 'Chinese (Mandarin)'
 }
-
 # Reverse map (value → key)
 reverse_language_map = {v.lower(): k for k, v in language_map.items()}
 if not os.path.exists(UPLOAD_FOLDER):
